@@ -20,6 +20,11 @@ Table of Contents
 - **[The Application](#the-application)**
     - [Docker](#docker)
 - **[Continuous Build](#continuous-build)**
+    - [Drone](#drone)
+- **[Production Deployment](#production-deployment)**
+    - [OpsWorks and Chef](#opsworks-and-chef)
+- **[Appendix](#appendix)**
+    - [Docker on MacOSX](#docker-on-macosx)
 
 The Application
 ==========
@@ -32,6 +37,8 @@ Docker
 ------
 
 [Docker](<https://www.docker.com>) is a lightweight system for 'containerizing' an application, allowing it to run in a standard environment on top of many non-standardized platforms. It's quite powerful, and in some ways can be thought of like a version control system for infrastructures. We use it simply as an easy way to specify the complete set of requirements of each of our applications. Thus, our applications do not *need* to run in Docker, but we use Docker as a concise and portable way of describing each application's requirements, and of running our application wherever we want without making changes to the host system.
+
+For some tips and tricks about running Docker on MacOSX, refer to [the Appendix](#docker-on-macosx).
 
 #### How we use Docker
 
@@ -98,6 +105,7 @@ N.B. Drone runs its automated builds inside of a Docker container, but the trick
 
 Drone is incredibly simple to link to Github right out of the box. First, set up a Drone account on <http://www.drone.io> using your Github account. You'll automatically be able to connect to all of your repos.
 
+Drone manages builds on a per-repo basis, regardless of what user added the repo to Drone. If you add a repo to your account that already exists in Drone, it seems like you'll get read-only access to the existing Drone configuration for that repo. You can then be added as an admin by the user who created the build.
 
 If you don't have any repos configured for Drone yet, you'll see this screen. Click **"Setup your repos now"**. Otherwise, click **"New Project"** in the toolbar.
 
@@ -115,17 +123,76 @@ Now you need to tell Drone how to build your application, and how to run your te
 
 ![](/images/drone03_build_script.png?raw=true)
 
-The default Python build script is good enough for now.
+The default Python build script is good enough for now. It will install our app's custom requirements from `requirements.txt` and run our tests. We don't actually have any tests, so this will trivially succeed. Click **"Save"**
 
-OpsWorks
---------
+![](/images/drone03_build_script.png?raw=true)
 
-[AWS OpsWorks](http://aws.amazon.com/opsworks/) is a simple but powerful platform for managing and automating application provisioning and deployment on top of Amazon EC2. OpsWorks is the platform of choice for Qmulus's development, staging, and production environments, and this README is intended to document how we use OpsWorks internally, and serve as a simple tutorial or guide for anyone considering setting up a similar deployment environment with OpsWorks.
+And you're done! Drone automatically adds a hook to GitHub that will trigger a build whenever new code is pushed to your repo. You can trigger a manual build of any particular branch from here with the **"Build Now"** button, and from the **"Repository"** tab you can filter which branches will trigger an automatic build.
 
-Chef
-----
+[Later on](#automated-deployment), we'll set up automatic deployment of each successful build to a "live" development environment on AWS, but first we're going to set up a basic production environment on AWS.
 
-AWS OpsWorks uses [Chef](https://www.getchef.com) exclusively for all of its custom automation. Chef is quite powerful, but seems a bit heavy and complicated for our needs. We have tried to set up some basic Chef recipes 
+Production Deployments
+======================
+
+So far we've used Docker to encapsulate our application to run anywhere consistently, and Drone to do continuous builds. Our app is basically all dressed up with nowhere to go. Let's create a simple production environment on AWS on which to run our app. Then, we'll set up a stripped-down live development environment on the same infrastructure to which we can have Drone deploy each successful build.
+
+We have chosen to use Amazon Web Services EC2 to host our applications, and AWS OpsWorks to manage our provisioning and deployment.
+
+OpsWorks and Chef
+-----------------
+
+[AWS OpsWorks](http://aws.amazon.com/opsworks/) is a simple but powerful platform for managing and automating application provisioning and deployment on top of Amazon EC2. OpsWorks allows you to quickly describe an application stack consisting of various layers of application servers, database servers, and elastic load balancers. OpsWorks supports a handful of application server types out of the box, but this selection is quite limited. To deploy our Dockerized applications, we'll be using OpsWorks's 'custom' application server type.
+
+OpsWorks uses [Chef](https://www.getchef.com) exclusively for all of its custom automation. Chef is quite powerful, but seems a bit heavy and complicated for our needs (after all, we chose Docker as a simple and lightweight tool to manage our infrastructure). However, we'll need to use a little bit of Chef as glue to make our custom OpsWorks layers run smoothly.
+
+This repository contains some basic Chef recipes to turn the OpsWorks 'custom' server type into a pretty full-featured Docker application server, capable of running whatever Dockerized application we choose to throw at it (for now, we'll just be throwing `hello-world`, so that's not really so high a bar).
+
+#### How we use OpsWorks
+
+We're going to set up a simple OpsWorks stack, following along with [this official video tutorial](http://www.youtube.com/watch?v=9NnWJsS4Y2c#t=18), except instead of deploying a PHP application, we're going to set up our stack to run our Dockerized `hello-world` application. If you aren't familiar with OpsWorks, watch at least the first minute of the video before continuing. That will give you an overview of the basic theory and organization of OpsWorks; this walkthrough will follow the rest of the video pretty much verbatim, except for our custom changes to support Docker.
+
+Let's start at the main [OpsWorks console](https://console.aws.amazon.com/opsworks/home#firstrun), which should look like this:
+
+![](/images/opsworks00_welcome.png?raw=true)
+
+Click **"Add Your First Stack"**.
+
+Now you get to set a bunch of attributes for your stack. The defaults are mostly fine for our purposes. Here's what you'll need to change (click on **"Advanced"** at the bottom to see all the settings; you'll need them):
+
+**Name:** Give you stack a name. We'll call ours `hello-world-prod`
+**Default SSH Key:** Select an existing SSH key if you wan't to be able to SSH to your nodes for any reason (this seems like a useful idea especially as you're getting all the kinks worked out).
+**Use custom Chef cookbooks:** Yes
+ - **Repository URL:** Enter the URL to your Chef repository. (you can use this repository!) `https://github.com/qmulus-io/deployment.git`
+ 
+That's it. Click **"Add Stack"**
+
+You should see this -- the basic stack dashboard:
+
+![](/images/opsworks01_add_layer.png?raw=true)
+
+Next, let's follow Step 1 and add a layer to run our application servers. Click **"Add Layer"** and set the following options:
+
+**Layer type:** Custom
+**Name:** Give your layer a pretty, descriptive name with capitalization and everything. This is what will show up in your OpsWorks dashboard. We'll call ours `Web Server`.
+**Short name:** Give your layer a programmatic identifier with no spaces or capitals (hypens will be converted to underscores in Chef recipes, so maybe avoid them.) We'll call ours `web_server`.
+
+A note about the short name: Layers are designed to be used to segregate different types of applications in your stack. While nothing theoretically prevents you from running multiple different applications on the same layer, you can only run one application on each instance in that layer, and you won't have any programmatic way of telling them apart. Therefore, treat each layer as a pool of instances for a particular type of application server (if your app has multiple different types of servers working together) and use the short name to identify the specific server that will run in this layer. The short name will come back later when we get to deployments.
+
+Click **"Add Layer"**
+
+Now you have a layer, and the video walkthrough is going to want you to add instances. However, there's a little bit more configuration we need to do first. You should see this summary of your new layer:
+
+![](/images/opsworks02_added_layer.png?raw=true)
+
+Click **"Recipes"** This will open the details view for the layer's recipes. Click the **"Edit"** button at the top.
+
+OpsWorks defines a five 'lifecycle events' for your instances (setup, configure, deploy, undeploy, and shutdown), and provides standard Chef recipes to perform those events when they are triggered. We're going to add some custom recipes to do the right things with Docker at each of these events.
+
+Scroll down to the section titled **Custom Chef Recipes**.
+
+![](/images/opsworks03_chef_recipes.png?raw=true)
+
+
 
 
 
