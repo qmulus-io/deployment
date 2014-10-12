@@ -245,7 +245,7 @@ Now we'll pick back up with the video walkthrough and add some instances. Click 
 
 ![](/images/opsworks07_no_instances.png?raw=true)
 
-Click **"Add an instance"**. The defaults are fine, though `hello-world` probably doesn't neem a `c3.large`. We'll use an `m1.small` instead.
+Click **"Add an instance"**. The default options are fine, though `hello-world` probably doesn't neem a `c3.large`. We'll use an `m1.small` instead.
 
 ![](/images/opsworks08_add_instance.png?raw=true)
 
