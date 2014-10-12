@@ -91,7 +91,7 @@ Drone
 
 [Drone](<https://drone.io>) is an incredibly simple continuous build system built on Docker with a cloud service that's free for open-source projects as well as a self-hosted version you can run on your own hardware and configure to your heart's content. We've decided to start with the cloud service, and more to the self-hosted system when we need to make advanced customizations.
 
-N.B. Drone runs its automated builds inside of a Docker container, but the trick is it's not *your* Docker container, it's one of their standard ones.[^They have standard containers for many languages] To be able to run our Drone builds inside our own Docker containers, the way our application runs at every other stage of our pipeline, we'll have to run our own Drone server and pull some crazy hacks like [this](http://stackoverflow.com/questions/24946414/building-docker-images-with-drone-io) on it. Right now, however, Drone's built-in containers are pretty much identical to ours, making this a project for another day.
+N.B. Drone runs its automated builds inside of a Docker container, but the trick is it's not *your* Docker container, it's one of their standard ones (they have standard containers for many languages). To be able to run our Drone builds inside our own Docker containers, the way our application runs at every other stage of our pipeline, we'll have to run our own Drone server and pull some crazy hacks like [this](http://stackoverflow.com/questions/24946414/building-docker-images-with-drone-io) on it. Right now, however, Drone's built-in containers are pretty much identical to ours, making this a project for another day.
 
 
 #### How we use Drone
