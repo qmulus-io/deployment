@@ -245,6 +245,16 @@ Now we'll pick back up with the video walkthrough and add some instances. Click 
 
 ![](/images/opsworks07_no_instances.png?raw=true)
 
+Click **"Add an instance"**. The defaults are fine, though `hello-world` probably doesn't neem a `c3.large`. We'll use an `m1.small` instead.
+
+![](/images/opsworks08_add_instance.png?raw=true)
+
+N.B. If you set the **Root device type** to `Instance store` (the default stack default), then the instance's storage will be deleted every time it stops, which is cheaper than the alternative and probably what you want anyway for a stateless application server.
+
+Click **"Add Instance"**. Let's follow the video walkthrough and add a second instance just like the first. After that, you should be here:
+
+![](/images/opsworks09_stopped_instances.png?raw=true)
+
 
 Appendix
 ========
