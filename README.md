@@ -155,7 +155,7 @@ We're going to set up a simple OpsWorks stack, following along with [this offici
 
 The basis for our custom docker recipes came from this excellent blog post about [Running Docker on AWS OpsWorks](http://blogs.aws.amazon.com/application-management/post/Tx2FPK7NJS5AQC5/Running-Docker-on-AWS-OpsWorks). Consult that post for further information.
 
-##### Creating a Stack
+#### Creating a Stack
 
 Let's start at the main [OpsWorks console](https://console.aws.amazon.com/opsworks/home#firstrun), which should look like this:
 
@@ -176,7 +176,7 @@ You should see this -- the basic stack dashboard:
 
 ![](/images/opsworks01_add_layer.png?raw=true)
 
-##### Creating a Layer
+#### Creating a Layer
 
 Next, let's follow Step 1 and add a layer to run our application servers. Click **"Add Layer"** and set the following options:
 
@@ -209,13 +209,13 @@ N.B. The Chef *Repository URL* is global for the whole stack, so you'll need to 
 
 Click **"Save"**.
 
-##### Some Notes about Layers
+#### Some Notes about Layers
 
 There is one peculiarity of OpsWorks layers that is important to know. Even though OpsWorks provides the useful distinction of "layers" to divide up groups of instances which each run a particular application in your stack, there's no built-in way to specify which application should run on which layer. Instead, OpsWorks seems to assume that you'll only ever have one layer of each type (i.e. PHP Server, Java Server, etc.), and uses these types to assign applications to layers. This would be fairly limiting even if we weren't intending to make all of our layers with the "custom" type.
 
 To work around this, our `docker::deploy` Chef recipe can take a `layer` parameter (which we'll see later when we configure an application) that specifies the layer on which the application should run. The video walkthrough tells you to create some instances, then create an application, then deploy that application. In practice it's simpler to create the applications first, because whenever a new instance is created, OpsWorks will always attempt to deploy every application to it. Applications with the wrong type will be skipped by the default Chef deployment recipe, and docker application with the wrong layer specification will be skipped by our custom recipe. The nice parts of all this is that you never have to worry about (re)deploying the current version of your application after you spin up new instances to handle increased load, and that you don't have to uncheck all the other applications' layers when you manually deploy a new version of one application (they'll just get skipped automatically).
 
-##### Creating an Application
+#### Creating an Application
 
 We're going to skip ahead in the video a little bit and create an application before we create any instances. There is no wrong way, but if we have our applications defined first, they'll be automatically deployed when we spin up our instances (which is pretty cool).
 
