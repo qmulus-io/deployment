@@ -99,9 +99,17 @@ N.B. Drone runs its automated builds inside of a Docker container, but the trick
 Drone is incredibly simple to link to Github right out of the box. First, set up a Drone account on <http://www.drone.io> using your Github account. You'll automatically be able to connect to all of your repos.
 
 
-If you don't have any repos configured for Drone yet, you'll see this screen. Click **"Setup your repos now"**
+If you don't have any repos configured for Drone yet, you'll see this screen. Click **"Setup your repos now"**. Otherwise, click **"New Project"** in the toolbar.
 
-![Step 1](/images/drone00_welcome.png?raw=true "title")
+![](/images/drone00_welcome.png?raw=true)
+
+Select your repository service (GitHub for us). You'll see a list of all the repositories in your account (including in your organizations). Click **"Select"** on the repo your want to build and test (for us, `qmulus-io/hello-world`).
+
+![](/images/drone01_select_repo.png?raw=true)
+
+Then you'll need to select the language of your project. This step is basically allowing you to select which of Drone's pre-built Docker images will be used to build your project. We're going to use Python.
+
+![](/images/drone02_select_language.png?raw=true)
 
 OpsWorks
 --------
