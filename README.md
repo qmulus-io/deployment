@@ -17,9 +17,9 @@ Table of Contents
 =================
 
 - **[Overview](#overview)**
-- **[The Application](#theapplication)**
+- **[The Application](#the-application)**
     - [Docker](#docker)
-- **[Continuous Build](#continuousbuild)**
+- **[Continuous Build](#continuous-build)**
 
 The Application
 ==========
