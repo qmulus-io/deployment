@@ -37,6 +37,7 @@ Table of Contents
     - [Rollback](#rollback)
     - [Stop, Start, and Restart](#stop-start-and-restart)
     - [Undeploy](#undeploy)
+- **[Continuous Deployment to Development Environment](#continuous-deployment-to-development-environment)**
 - **[Appendix](#appendix)**
     - [Docker on MacOSX](#docker-on-macosx)
 
@@ -391,6 +392,23 @@ Undeploy
 --------
 
 Undeploy is actually a lifecycle event, so our custom `docker::undeploy` recipe is registered in the layer settings like our custom `docker::deploy` recipe. This means you can do undeploys the same way as deploys, and the same way you would for a non-custom application on OpsWorks.
+
+Continuous Deployment to Development Environment
+================================================
+
+The last piece of the puzzle is to set up a development environment that mirrors our production stack as much as possible, and configure Drone to automatically deploy every new build to this environment, so we have a place to do integration testing that's always as up-to-date as possible.
+
+To do this, we're going to start by creating a new stack on OpsWorks, called `hello-world-dev`, exactly the same way as we created our production stack, with two important exceptions.
+
+2. We're only going to create a single instance in each layer in our development stack. This instance will:
+    - Have an EBS volume, so it's state won't disappear when it stops (you'll see why in a minute).
+    - Have an Elastic IP, so we can point a DNS name directly at it.
+    - Be as small as possible (for our app's needs), since it's development and not production.
+1. We're not going to configure an Elastic Load Balancer. We're going to access the single instance in each layer directly via its own Elastic IP, instead of pooling them behind an ELB.
+
+I'm going to finish this section after dinner, because I've written a lot today already.
+
+TODO: deploy only `master` branch.
 
 Appendix
 ========
