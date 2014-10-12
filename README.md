@@ -249,7 +249,7 @@ Click **"Add an instance"**. The defaults are fine, though `hello-world` probabl
 
 ![](/images/opsworks08_add_instance.png?raw=true)
 
-N.B. If you set the **Root device type** to `Instance store` (the default stack default), then the instance's storage will be deleted every time it stops, which is cheaper than the alternative and probably what you want anyway for a stateless application server.
+N.B. In **Advanced**, if you set the **Root device type** to `Instance store` (the default stack default), then the instance's storage will be deleted every time it stops, which is cheaper than the alternative and probably what you want anyway for a stateless application server.
 
 Click **"Add Instance"**. Let's follow the video walkthrough and add a second instance just like the first. After that, you should be here:
 
