@@ -96,6 +96,12 @@ N.B. Drone runs its automated builds inside of a Docker container, but the trick
 
 #### How we use Drone
 
+Drone is incredibly simple to link to Github right out of the box. First, set up a Drone account on <http://www.drone.io> using your Github account. You'll automatically be able to connect to all of your repos.
+
+
+If you don't have any repos configured for Drone yet, you'll see this screen. Click **"Setup your repos now"**
+
+![Step 1](/images/drone00_welcome.png?raw=true "title")
 
 OpsWorks
 --------
