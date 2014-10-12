@@ -188,11 +188,18 @@ Click **"Recipes"** This will open the details view for the layer's recipes. Cli
 
 OpsWorks defines a five 'lifecycle events' for your instances (setup, configure, deploy, undeploy, and shutdown), and provides standard Chef recipes to perform those events when they are triggered. We're going to add some custom recipes to do the right things with Docker at each of these events.
 
-Scroll down to the section titled **Custom Chef Recipes**.
+Scroll down to the section titled **Custom Chef Recipes**, and add the following custom recipes:
 
 ![](/images/opsworks03_chef_recipes.png?raw=true)
 
+- **Setup:** `docker::install`
+- **Deploy:** `docker::deploy`
+- **Undeploy:** `docker::undeploy`
+- **Shutdown:** `docker::stop`
 
+N.B. The Chef *Repository URL* is global for the whole stack, so you'll need to store all your custom Chef recipes for every layer in the same repo. For our purposes, though, the only recipes we'll need are these basic docker ones.
+
+Click **"Save"**.
 
 
 
