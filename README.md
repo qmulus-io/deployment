@@ -255,7 +255,7 @@ Click **"Add Instance"**. Let's follow the video walkthrough and add a second in
 
 ![](/images/opsworks09_stopped_instances.png?raw=true)
 
-Click **"Start All Instances"**.
+Click **"Start All Instances"**. It will take a few minutes for AWS to provision all your instances.
 
 Appendix
 ========
