@@ -19,10 +19,24 @@ Table of Contents
 - **[Overview](#overview)**
 - **[The Application](#the-application)**
     - [Docker](#docker)
+    - [How we use Docker](#how-we-use-docker)
 - **[Continuous Build](#continuous-build)**
     - [Drone](#drone)
-- **[Production Deployment](#production-deployment)**
+    - [How we use Drone](#how-we-use-drone)
+- **[Production Environment](#production-environment)**
     - [OpsWorks and Chef](#opsworks-and-chef)
+    - [How we use OpsWorks](#how-we-use-opsworks)
+    - [Creating a Stack](#creating-a-stack)
+    - [Creating a Layer](#creating-a-layer)
+    - [Some Notes About Layers](#some-notes-about-layers)
+    - [Creating an Application](#creating-an-application)
+    - [Adding Instances](#adding-instances)
+    - [Adding an Elastic Load Balancer](#adding-an-elastic-load-balancer)
+- **[Application Lifecycle Events](#application-lifecycle-events)**
+    - [Deploy](#deploy)
+    - [Rollback](#rollback)
+    - [Stop, Start, and Restart](#stop-start-and-restart)
+    - [Undeploy](#undeploy)
 - **[Appendix](#appendix)**
     - [Docker on MacOSX](#docker-on-macosx)
 
@@ -40,7 +54,8 @@ Docker
 
 For some tips and tricks about running Docker on MacOSX, refer to [the Appendix](#docker-on-macosx).
 
-#### How we use Docker
+How we use Docker
+-----------------
 
 
 Each of our applications is contained in a single Github repository. In the root of this repository is a [`Dockerfile`](https://docs.docker.com/reference/builder/) specifying the infrastructure that this application needs to run.
@@ -101,7 +116,8 @@ Drone
 N.B. Drone runs its automated builds inside of a Docker container, but the trick is it's not *your* Docker container, it's one of their standard ones (they have standard containers for many languages). To be able to run our Drone builds inside our own Docker containers, the way our application runs at every other stage of our pipeline, we'll have to run our own Drone server and pull some crazy hacks like [this](http://stackoverflow.com/questions/24946414/building-docker-images-with-drone-io) on it. Right now, however, Drone's built-in containers are pretty much identical to ours, making this a project for another day.
 
 
-#### How we use Drone
+How we use Drone
+----------------
 
 Drone is incredibly simple to link to Github right out of the box. First, set up a Drone account on <http://www.drone.io> using your Github account. You'll automatically be able to connect to all of your repos.
 
@@ -131,7 +147,7 @@ And you're done! Drone automatically adds a hook to GitHub that will trigger a b
 
 [Later on](#automated-deployment), we'll set up automatic deployment of each successful build to a "live" development environment on AWS, but first we're going to set up a basic production environment on AWS.
 
-Production Deployments
+Production Environment
 ======================
 
 So far we've used Docker to encapsulate our application to run anywhere consistently, and Drone to do continuous builds. Our app is basically all dressed up with nowhere to go. Let's create a simple production environment on AWS on which to run our app. Then, we'll set up a stripped-down live development environment on the same infrastructure to which we can have Drone deploy each successful build.
@@ -149,13 +165,15 @@ This repository contains some basic Chef recipes to turn the OpsWorks 'custom' s
 
 We've been using the term 'application' to refer to single server program of whatever type (here it is a python web server that says "hello world" to visitors). A complex application may consist of several distinct types of servers -- web servers, api servers, database servers, etc. -- all working together. For consistency with OpsWorks's terminology, we're going to refer to this complete environment as a "stack" and each of the separate components within it as "applications". A stack may run several redundant instances of each application -- OpsWorks calls these groups of related instances "layers".
 
-#### How we use OpsWorks
+How we use OpsWorks
+-------------------
 
 We're going to set up a simple OpsWorks stack, following along with [this official video tutorial](http://www.youtube.com/watch?v=9NnWJsS4Y2c#t=18), except instead of deploying a PHP application, we're going to set up our stack to run our Dockerized `hello-world` application. If you aren't familiar with OpsWorks, watch at least the first minute of the video before continuing. That will give you an overview of the basic theory and organization of OpsWorks; this walkthrough will follow the rest of the video pretty much verbatim, except for our custom changes to support Docker.
 
 The basis for our custom docker recipes came from this excellent blog post about [Running Docker on AWS OpsWorks](http://blogs.aws.amazon.com/application-management/post/Tx2FPK7NJS5AQC5/Running-Docker-on-AWS-OpsWorks). Consult that post for further information.
 
-#### Creating a Stack
+Creating a Stack
+----------------
 
 Let's start at the main [OpsWorks console](https://console.aws.amazon.com/opsworks/home#firstrun), which should look like this:
 
@@ -170,13 +188,16 @@ Now you get to set a bunch of attributes for your stack. The defaults are mostly
 - **Use custom Chef cookbooks:** Yes  
     - **Repository URL:** Enter the URL to your Chef repository. (you can use this repository!) `https://github.com/qmulus-io/deployment.git`
  
+N.B. Custom Chef cookbooks are automatically copied to each instance only once, when that instance is created. They are cached and are not pulled from the repository again, so any changes you make to them will not be reflected on any of your running instances. To get all your instances back up to date after a cookbook change, use the **"Update Custom Cookbooks"** command, in the **"Run Command"** tool, accessed from the **"Stack"** section of the OpsWorks console. Don't forget.
+ 
 That's it. Click **"Add Stack"**
 
 You should see this -- the basic stack dashboard:
 
 ![](/images/opsworks01_add_layer.png?raw=true)
 
-#### Creating a Layer
+Creating a Layer
+----------------
 
 Next, let's follow Step 1 and add a layer to run our application servers. Click **"Add Layer"** and set the following options:
 
@@ -209,13 +230,15 @@ N.B. The Chef *Repository URL* is global for the whole stack, so you'll need to 
 
 Click **"Save"**.
 
-#### Some Notes about Layers
+Some Notes About Layers
+-----------------------
 
 There is one peculiarity of OpsWorks layers that is important to know. Even though OpsWorks provides the useful distinction of "layers" to divide up groups of instances which each run a particular application in your stack, there's no built-in way to specify which application should run on which layer. Instead, OpsWorks seems to assume that you'll only ever have one layer of each type (i.e. PHP Server, Java Server, etc.), and uses these types to assign applications to layers. This would be fairly limiting even if we weren't intending to make all of our layers with the "custom" type.
 
 To work around this, our `docker::deploy` Chef recipe can take a `layer` parameter (which we'll see later when we configure an application) that specifies the layer on which the application should run. The video walkthrough tells you to create some instances, then create an application, then deploy that application. In practice it's simpler to create the applications first, because whenever a new instance is created, OpsWorks will always attempt to deploy every application to it. Applications with the wrong type will be skipped by the default Chef deployment recipe, and docker application with the wrong layer specification will be skipped by our custom recipe. The nice parts of all this is that you never have to worry about (re)deploying the current version of your application after you spin up new instances to handle increased load, and that you don't have to uncheck all the other applications' layers when you manually deploy a new version of one application (they'll just get skipped automatically).
 
-#### Creating an Application
+Creating an Application
+-----------------------
 
 We're going to skip ahead in the video a little bit and create an application before we create any instances. There is no wrong way, but if we have our applications defined first, they'll be automatically deployed when we spin up our instances (which is pretty cool).
 
@@ -239,7 +262,8 @@ Click **"Add App"**. You should see a summary entry for your new app.
 
 ![](/images/opsworks06_app_added.png?raw=true)
 
-#### Adding Instances
+Adding Instances
+----------------
 
 Now we'll pick back up with the video walkthrough and add some instances. Click **"Instances"** in the left bar. You should see a summary of each layer, showing its current instances. Since you have one layer and no instances, you'll get this:
 
@@ -257,7 +281,8 @@ Click **"Add Instance"**. Let's follow the video walkthrough and add a second in
 
 Click **"Start All Instances"**. It will take a few minutes for AWS to provision all your instances.
 
-#### Adding an Elastic Load Balancer
+Adding an Elastic Load Balancer
+-------------------------------
 
 The video walkthrough talks about using HAProxy to distribute load between the instances in a layer. However, the standard HAProxy configuration on OpsWorks doesn't support play nicely with our custom layer type, and configuring it requires a decent amount of hacking around with Chef. An alternative is to use AWS's Elastic Load Balancer service, which is simpler and more robust but less flexible than HAProxy. [This post](http://harish11g.blogspot.com/2012/11/amazon-elb-vs-haproxy-ec2-analysis.html) provides an excellent comparison.
 
@@ -283,7 +308,89 @@ With a load balancer created, we can now link it to our OpsWorks layer. Switch b
 
 Click **"Save"**.
 
-Now, back in the **Layers** summary view, you'll see an ELB instance attached to your layer. Once all your instances have passed enough health checks, which could take a few minutes, and all the badges are green, your app is up and running. Click on the ELB url to actually load the app, see our "Hello World" message in all its glory. 
+Now, back in the **Layers** summary view, you'll see an ELB instance attached to your layer. Once all your instances have passed enough health checks, which could take a few minutes, and all the badges are green, your app is up and running. Click on the ELB url to actually load the app, see our "Hello World" message in all its glory. (We can also go straight to any particular instance, using its IP from the **Instances** screen, and see the page served by that particular server, bypassing the ELB, if we want to.)
+
+
+Application Lifecycle Events
+============================
+
+So we've build a simple fault-tolerant and scalable production environment with AWS OpsWorks. What now? Well, assuming our app is ever going to be worked on again, we're going to have to deploy a new version at some point. Now, this is our production environment, so of course we're not going to be deploying any releases that haven't gone through the testing and QA and all of that. Deploying to production should be done manually, after due consideration, but it should also be done with a single button push, and we should be able to roll back right away if there's a problem (with but a second button push).
+
+OpsWorks makes this, almost, a piece of cake.
+
+Deploy
+------
+
+Deploying a new version of an app *is* a piece of cake. Switch to the **"Apps"** summary screen on the OpsWorks console.
+
+![](/images/opsworks12_apps.png?raw=true)
+
+Click **"deploy"** for the app you want to update.
+
+![](/images/opsworks13_apps.png?raw=true)
+
+You don't need to set any options on this screen, just click **"Deploy"** and your app will roll out to every instance in the appropriate layer. (Technically, it will be sent to every instance in every layer, but Chef will skip deploying it on instances that don't match the app's `layer` value we set up when we created the app.) If you only want to deploy to some instances in your app's layer, for a gradual roll-out say, then select instances with the **"Advanced"** view, but otherwise just push it to every instance and let Chef sort it out.
+
+You'll notice that there are a bunch of commands other than **Deploy** for you to choose from on this screen. Most of these, however, will only work for the particular application types that OpsWorks natively supports, and will have no effect on our custom layers. Only **Deploy** and **Undeploy** here will actually do anything, but we've set up custom Chef recipes to perform the other functions in a slightly different way.
+
+Rollback
+--------
+
+OpsWorks lets you roll back up to 5 deployed versions. However, this only works for the native application types, and I haven't written a rollback recipe for Docker yet. Right now we can't roll back with OpsWorks directly, and instead have to re-deploy a previous version (by reverting our repository and deploying as for a new version) when we want to roll back a failed release.
+
+**TODO:** make rollback work more smoothly.
+
+Stop, Start, and Restart
+------------------------
+
+Since we can't use OpsWorks build in deployment commands for these operations, we've built some simple Chef recipes to do them for us. Switch to the **"Deployments"** section of the OpsWorks console, and click the **"Run Command"** button.
+
+![](/images/opsworks14_deployments.png?raw=true)
+
+**Run Command** lets you do a bunch of tasks on the stack that are not (ostensibly) application-specific, like the **Update Custom Cookbooks** command we mentioned earlier. To stop, start, or restart a Docker application on some instances, we're going to use the **Execute Recipes** command.
+
+![](/images/opsworks15_stop.png?raw=true)
+
+We have two ways to specify what applications to affect. Either we can limit the command to only run on certain layers or instances, or we can pass Chef a custom JSON telling it which app to modify (or we can do both). This is what the custom JSON should look like (where `web_server` is the name of our application):
+
+```
+{
+ "app": "web_server"
+}
+```
+
+If the custom JSON is not specified, the recipe will affect any Docker app running on the included instances.
+
+##### Stop
+
+To stop an application, use this recipe:
+
+```
+docker::stop
+```
+
+##### Start
+
+To start a stopped application, use this recipe:
+
+```
+docker::start
+```
+
+##### Restart
+
+To restart a running application, use the two recipes together:
+
+```
+docker::stop, docker::start
+```
+
+You can provide a comment describing what app you're affecting, and what you're doing to it that will show up in the deployments summary and make the history of the stack much clearer than just a whole bunch of "Execute Recipes". You can also re-run past deployments/commands from the deployments summary screen, so if you label your custom executions, you won't have to type the recipe names every time you do common tasks.
+
+Undeploy
+--------
+
+Undeploy is actually a lifecycle event, so our custom `docker::undeploy` recipe is registered in the layer settings like our custom `docker::deploy` recipe. This means you can do undeploys the same way as deploys, and the same way you would for a non-custom application on OpsWorks.
 
 Appendix
 ========
@@ -337,4 +444,3 @@ Download <http://static.dockerfiles.io/boot2docker-v1.2.0-virtualbox-guest-addit
 ```
 
 See [this post](https://medium.com/boot2docker-lightweight-linux-for-docker/boot2docker-together-with-virtualbox-guest-additions-da1e3ab2465c) for details.
-
