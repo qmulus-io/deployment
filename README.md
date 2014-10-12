@@ -239,6 +239,13 @@ Click **"Add App"**. You should see a summary entry for your new app.
 
 ![](/images/opsworks06_app_added.png?raw=true)
 
+#### Adding Instances
+
+Now we'll pick back up with the video walkthrough and add some instances. Click **"Instances"** in the left bar. You should see a summary of each layer, showing its current instances. Since you have one layer and no instances, you'll get this:
+
+![](/images/opsworks07_no_instances.png?raw=true)
+
+
 Appendix
 ========
 
