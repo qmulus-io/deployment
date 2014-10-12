@@ -267,7 +267,17 @@ To add an ELB, we'll need to switch to the EC2 console. Click **"Layers"** in th
 
 ![](/images/elb00_create.png?raw=true)
 
-Give your load balancer a name, sensibly the same name as your OpsWorks stack (with an appended layer identification if you'll be exposing multiple layers to the world).
+Give your load balancer a name, sensibly the same name as your OpsWorks stack (with an appended layer identification if you'll be exposing multiple layers to the world). Also, specify what ports to expose. We're just going to use port 80 for `hello-world`. Click **"Continue"**.
+
+![](/images/elb01_health.png?raw=true)
+
+Health Check is how your ELB determines which instances are alive and capable of handling traffic. The default settings are almost perfect, but we'll need to change the **Ping Path** to `/`, because `hello-world` doesn't have an `index.html`. Click **"Continue"**.
+
+Just click **"Continue"** through the rest of the wizard. We don't want to add any instances now because OpsWorks will take over managing the load balancer once we link them together.
+
+With a load balancer created, we can now link it to our OpsWorks layer. Switch back to the OpsWorks console (where we were in the middle of editing the network settings for our layer) and select the new load balancer from the drop-down menu.
+
+![](/images/opsworks10_load_balancer.png?raw=true)
 
 Appendix
 ========
