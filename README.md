@@ -111,6 +111,12 @@ Then you'll need to select the language of your project. This step is basically 
 
 ![](/images/drone02_select_language.png?raw=true)
 
+Now you need to tell Drone how to build your application, and how to run your tests. This will be substantially the same configuration as we've already specified in our `Dockerfile`, except for the part that runs the tests, and it's a shame that we have to semi-repeat it here.
+
+![](/images/drone03_build_script.png?raw=true)
+
+The default Python build script is good enough for now.
+
 OpsWorks
 --------
 
