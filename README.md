@@ -257,6 +257,18 @@ Click **"Add Instance"**. Let's follow the video walkthrough and add a second in
 
 Click **"Start All Instances"**. It will take a few minutes for AWS to provision all your instances.
 
+#### Adding an Elastic Load Balancer
+
+The video walkthrough talks about using HAProxy to distribute load between the instances in a layer. However, the standard HAProxy configuration on OpsWorks doesn't support play nicely with our custom layer type, and configuring it requires a decent amount of hacking around with Chef. An alternative is to use AWS's Elastic Load Balancer service, which is simpler and more robust but less flexible than HAProxy. [This post](http://harish11g.blogspot.com/2012/11/amazon-elb-vs-haproxy-ec2-analysis.html) provides an excellent comparison.
+
+We'll need to create an ELB instance in EC2 to use with our OpsWorks stack (technically, with our  OpsWorks *layer*, because each layer will need it's own ELB if it's going to need one at all). 
+
+To add an ELB, we'll need to switch to the EC2 console. Click **"Layers"** in the left column, then click **"Network"** in the layer summary. Click **"Edit"** on the top right. There should be a link to the [**"EC2 Console"**](https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LoadBalancers:) in the **Elastic Load Balancing** section. Click **"Create Load Balancer"** and you'll find yourself at this wizard:
+
+![](/images/elb00_create.png?raw=true)
+
+Give your load balancer a name, sensibly the same name as your OpsWorks stack (with an appended layer identification if you'll be exposing multiple layers to the world).
+
 Appendix
 ========
 
