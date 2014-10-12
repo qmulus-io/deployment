@@ -275,9 +275,15 @@ Health Check is how your ELB determines which instances are alive and capable of
 
 Just click **"Continue"** through the rest of the wizard. We don't want to add any instances now because OpsWorks will take over managing the load balancer once we link them together.
 
+![](/images/opsworks10_load_balancer.png?raw=true)
+
 With a load balancer created, we can now link it to our OpsWorks layer. Switch back to the OpsWorks console (where we were in the middle of editing the network settings for our layer) and select the new load balancer from the drop-down menu.
 
-![](/images/opsworks10_load_balancer.png?raw=true)
+![](/images/opsworks11_layer_elb.png?raw=true)
+
+Click **"Save"**.
+
+Now, back in the **Layers** summary view, you'll see an ELB instance attached to your layer. Once all your instances have passed enough health checks, which could take a few minutes, and all the badges are green, your app is up and running. Click on the ELB url to actually load the app, see our "Hello World" message in all its glory. 
 
 Appendix
 ========
