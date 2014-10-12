@@ -147,9 +147,15 @@ OpsWorks uses [Chef](https://www.getchef.com) exclusively for all of its custom 
 
 This repository contains some basic Chef recipes to turn the OpsWorks 'custom' server type into a pretty full-featured Docker application server, capable of running whatever Dockerized application we choose to throw at it (for now, we'll just be throwing `hello-world`, so that's not really so high a bar).
 
+We've been using the term 'application' to refer to single server program of whatever type (here it is a python web server that says "hello world" to visitors). A complex application may consist of several distinct types of servers -- web servers, api servers, database servers, etc. -- all working together. For consistency with OpsWorks's terminology, we're going to refer to this complete environment as a "stack" and each of the separate components within it as "applications". A stack may run several redundant instances of each application -- OpsWorks calls these groups of related instances "layers".
+
 #### How we use OpsWorks
 
 We're going to set up a simple OpsWorks stack, following along with [this official video tutorial](http://www.youtube.com/watch?v=9NnWJsS4Y2c#t=18), except instead of deploying a PHP application, we're going to set up our stack to run our Dockerized `hello-world` application. If you aren't familiar with OpsWorks, watch at least the first minute of the video before continuing. That will give you an overview of the basic theory and organization of OpsWorks; this walkthrough will follow the rest of the video pretty much verbatim, except for our custom changes to support Docker.
+
+The basis for our custom docker recipes came from this excellent blog post about [Running Docker on AWS OpsWorks](http://blogs.aws.amazon.com/application-management/post/Tx2FPK7NJS5AQC5/Running-Docker-on-AWS-OpsWorks). Consult that post for further information.
+
+##### Creating a Stack
 
 Let's start at the main [OpsWorks console](https://console.aws.amazon.com/opsworks/home#firstrun), which should look like this:
 
@@ -159,10 +165,10 @@ Click **"Add Your First Stack"**.
 
 Now you get to set a bunch of attributes for your stack. The defaults are mostly fine for our purposes. Here's what you'll need to change (click on **"Advanced"** at the bottom to see all the settings; you'll need them):
 
-**Name:** Give you stack a name. We'll call ours `hello-world-prod`
-**Default SSH Key:** Select an existing SSH key if you wan't to be able to SSH to your nodes for any reason (this seems like a useful idea especially as you're getting all the kinks worked out).
-**Use custom Chef cookbooks:** Yes
- - **Repository URL:** Enter the URL to your Chef repository. (you can use this repository!) `https://github.com/qmulus-io/deployment.git`
+- **Name:** Give you stack a name. We'll call ours `hello-world-prod`
+- **Default SSH Key:** Select an existing SSH key if you wan't to be able to SSH to your nodes for any reason (this seems like a useful idea especially as you're getting all the kinks worked out).
+- **Use custom Chef cookbooks:** Yes  
+    - **Repository URL:** Enter the URL to your Chef repository. (you can use this repository!) `https://github.com/qmulus-io/deployment.git`
  
 That's it. Click **"Add Stack"**
 
@@ -170,11 +176,13 @@ You should see this -- the basic stack dashboard:
 
 ![](/images/opsworks01_add_layer.png?raw=true)
 
+##### Creating a Layer
+
 Next, let's follow Step 1 and add a layer to run our application servers. Click **"Add Layer"** and set the following options:
 
-**Layer type:** Custom
-**Name:** Give your layer a pretty, descriptive name with capitalization and everything. This is what will show up in your OpsWorks dashboard. We'll call ours `Web Server`.
-**Short name:** Give your layer a programmatic identifier with no spaces or capitals (hypens will be converted to underscores in Chef recipes, so maybe avoid them.) We'll call ours `web_server`.
+- **Layer type:** Custom
+- **Name:** Give your layer a pretty, descriptive name with capitalization and everything. This is what will show up in your OpsWorks dashboard. We'll call ours `Web Server`.
+- **Short name:** Give your layer a programmatic identifier with no spaces or capitals (hypens will be converted to underscores in Chef recipes, so maybe avoid them.) We'll call ours `web_server`.
 
 A note about the short name: Layers are designed to be used to segregate different types of applications in your stack. While nothing theoretically prevents you from running multiple different applications on the same layer, you can only run one application on each instance in that layer, and you won't have any programmatic way of telling them apart. Therefore, treat each layer as a pool of instances for a particular type of application server (if your app has multiple different types of servers working together) and use the short name to identify the specific server that will run in this layer. The short name will come back later when we get to deployments.
 
@@ -201,7 +209,35 @@ N.B. The Chef *Repository URL* is global for the whole stack, so you'll need to 
 
 Click **"Save"**.
 
+##### Some Notes about Layers
 
+There is one peculiarity of OpsWorks layers that is important to know. Even though OpsWorks provides the useful distinction of "layers" to divide up groups of instances which each run a particular application in your stack, there's no built-in way to specify which application should run on which layer. Instead, OpsWorks seems to assume that you'll only ever have one layer of each type (i.e. PHP Server, Java Server, etc.), and uses these types to assign applications to layers. This would be fairly limiting even if we weren't intending to make all of our layers with the "custom" type.
+
+To work around this, our `docker::deploy` Chef recipe can take a `layer` parameter (which we'll see later when we configure an application) that specifies the layer on which the application should run. The video walkthrough tells you to create some instances, then create an application, then deploy that application. In practice it's simpler to create the applications first, because whenever a new instance is created, OpsWorks will always attempt to deploy every application to it. Applications with the wrong type will be skipped by the default Chef deployment recipe, and docker application with the wrong layer specification will be skipped by our custom recipe. The nice parts of all this is that you never have to worry about (re)deploying the current version of your application after you spin up new instances to handle increased load, and that you don't have to uncheck all the other applications' layers when you manually deploy a new version of one application (they'll just get skipped automatically).
+
+##### Creating an Application
+
+We're going to skip ahead in the video a little bit and create an application before we create any instances. There is no wrong way, but if we have our applications defined first, they'll be automatically deployed when we spin up our instances (which is pretty cool).
+
+Click **"Apps"** in the left bar. You should see this:
+
+![](/images/opsworks04_no_apps.png?raw=true)
+
+Click **"Add an app"** and set the following options:
+
+- **Name:** Give your app a name. We'll call ours `web_server` (it's nice to name the app and its layer the same thing). This will also be the name given to the Docker image that gets built on each instance by the deployment recipe.
+- **Type:** Other
+- **Repository URL:** Enter the URL of the repo containing your app. `https://github.com/qmulus-io/hello-world.git`
+- **Environment Variables:** You'll can set environment variables to control how Chef manages your Dockerized app. These are the ones you'll need. You can set additional ones and they'll be passed into your Docker container for your app to use if you want.
+    - **container\_port:** The port on which your application server is listening, inside the Docker container. The `hello-world` server listens on port 8080.
+    - **service\_port:** The port on the host which should be mapped to the container\_port. This port will be exposed to the outside world. We want expose our service on port 80.
+    - **layer:** Here is where you specify the name of the layer on which this app should run. If you don't spell it right, the app will run nowhere. We called our layer `web_server`.
+
+![The environment variables you'll need](/images/opsworks05_env_vars.png?raw=true)
+
+Click **"Add App"**. You should see a summary entry for your new app.
+
+![](/images/opsworks06_app_added.png?raw=true)
 
 Appendix
 ========
