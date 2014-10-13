@@ -38,7 +38,7 @@ Table of Contents
     - [Stop, Start, and Restart](#stop-start-and-restart)
     - [Undeploy](#undeploy)
 - **[Continuous Deployment to Development Environment](#continuous-deployment-to-development-environment)**
-- **[References](#References)**
+- **[References](#references)**
 - **[Appendix](#appendix)**
     - [Docker on MacOSX](#docker-on-macosx)
 
