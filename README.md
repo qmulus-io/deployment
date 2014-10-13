@@ -38,6 +38,7 @@ Table of Contents
     - [Stop, Start, and Restart](#stop-start-and-restart)
     - [Undeploy](#undeploy)
 - **[Continuous Deployment to Development Environment](#continuous-deployment-to-development-environment)**
+- **[References](#References)**
 - **[Appendix](#appendix)**
     - [Docker on MacOSX](#docker-on-macosx)
 
@@ -409,6 +410,37 @@ To do this, we're going to start by creating a new stack on OpsWorks, called `he
 I'm going to finish this section after dinner, because I've written a lot today already.
 
 TODO: deploy only `master` branch.
+
+
+References
+==========
+
+- [Docker Explained - How to Containerize Python Web Applications](https://www.digitalocean.com/community/tutorials/docker-explained-how-to-containerize-python-web-applications)
+
+- [Remove Untagged Images from Docker](http://jimhoskins.com/2013/07/27/remove-untagged-docker-images.html)
+
+- [Docker - Managing Data in Containers](http://docs.docker.com/userguide/dockervolumes/)
+
+- [Building Docker Images with Drone.io](http://stackoverflow.com/questions/24946414/building-docker-images-with-drone-io)
+
+- [Software Delivery via Amazon Docker Workflow](http://r.32k.io/adf)
+
+- [How We Use Docker for Continuous Delivery - Part 1](http://contino.co.uk/use-docker-continuously-deliver-microservices-part-1/) 
+
+- [Getting Started with AWS and OpsWorks (video)](http://www.youtube.com/watch?v=9NnWJsS4Y2c#t=18)
+
+- [Running Docker on AWS OpsWorks](http://blogs.aws.amazon.com/application-management/post/Tx2FPK7NJS5AQC5/Running-Docker-on-AWS-OpsWorks)
+
+- [OpsWorks - Cookbooks 101](http://docs.aws.amazon.com/opsworks/latest/userguide/cookbooks-101.html)
+
+- [OpsWorks - Updating Custom Cookbooks](http://docs.aws.amazon.com/opsworks/latest/userguide/workingcookbook-installingcustom-enable-update.html)
+
+- [OpsWorks - Use Custom JSON to Modify the Stack Configuration JSON](http://docs.aws.amazon.com/opsworks/latest/userguide/workingstacks-json.html)
+
+- [Comparison Analysis:Amazon ELB vs HAProxy EC2](http://harish11g.blogspot.com/2012/11/amazon-elb-vs-haproxy-ec2-analysis.html)
+
+- [Boot2docker together with VirtualBox Guest Additions](https://medium.com/boot2docker-lightweight-linux-for-docker/boot2docker-together-with-virtualbox-guest-additions-da1e3ab2465c)
+
 
 Appendix
 ========
