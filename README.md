@@ -411,6 +411,8 @@ I'm going to finish this section after dinner, because I've written a lot today 
 
 TODO: deploy only `master` branch.
 
+TODO: Clone stack from [OpsWorks Console](https://console.aws.amazon.com/opsworks/home?#/dashboard).
+
 
 References
 ==========
